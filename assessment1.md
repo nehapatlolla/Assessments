@@ -74,6 +74,12 @@ values
 (2, 2, 60000, '2023-02-10'),
 (3, 3, 45000, '2023-02-15');
 
+select * from Students;
+select * from Teachers;
+select * from Courses;
+select * from Enrollments;
+select * from Payments;
+
 drop table Students;
 drop table Teachers;
 drop table Courses;
@@ -85,7 +91,213 @@ drop table Payments;
 ## 1. Write an SQL query to insert a new student named John Doe into the "Students" table.
 
 ```sql
-insert into Students (student_id, first_name, last_name, date_of_birth, email, phone_number)
+insert into Students
+(student_id, first_name, last_name, date_of_birth, email, phone_number)
 values
 (4, 'John', 'Doe', '2002-09-04', 'john.doe@gmail.com', 5564646590);
 ```
+
+![alt text](image-8.png)
+
+## 2. Write an SQL query to enroll an existing student in a course, specifying the enrollment date.
+
+```sql
+insert into Enrollments
+(enrollment_id, student_id, course_id, enrollment_date)
+values
+(4, 1, 102, getdate());
+```
+
+![alt text](image-10.png)
+
+## 3. Update the email address of a teacher in the "Teachers" table.
+
+```sql
+update Teachers
+set email = 'hrdepartment.saranya@gmail.com'
+where teacher_id = 2;
+select * from teachers;
+```
+
+![alt text](image-11.png)
+
+## 4. Write an SQL query to delete a specific enrollment record, choosing based on the student and course.
+
+```sql
+delete from Enrollments
+where student_id = 1
+and course_id = 102
+and enrollment_date = '2024-06-15';
+select * from Enrollments;
+```
+
+![alt text](image-12.png)
+
+## 5. Update a course to assign a specific teacher using the "Courses" table.
+
+```sql
+update courses
+set teacher_id =  2
+where course_id = 101
+select * from courses;
+```
+
+![alt text](image-13.png)
+
+## 6. Write an SQL query to calculate the total payments made by a specific student.
+
+## 7. Retrieve a list of courses along with the count of students enrolled in each.
+
+```sql
+select student_id, count(student_id)
+as countofcourses
+from courses c
+join Enrollments E
+on c.course_id= E.course_id
+group by student_id;
+
+```
+
+![alt text](image-14.png)
+
+## 8. Find the names of students who have not enrolled in any course.
+
+```sql
+select first_name, last_name
+from Students s
+where s. student_id not in (select student_id from Enrollments)
+```
+
+![alt text](image-15.png)
+
+## 9. Retrieve the first name and last name of students, along with the names of the courses they are enrolled in.
+
+```sql
+select first_name, last_name , course_name
+from Students s
+join Enrollments e
+on s.student_id = e.student_id
+join Courses c
+on e.course_id= c.course_id;
+
+```
+
+![alt text](image-16.png)
+
+## 10. List names of teachers and the courses they are assigned to.
+
+```sql
+select  first_name, last_name, course_name
+from Teachers t
+join Courses c
+on c.teacher_id = t.teacher_id;
+```
+
+![alt text](image-17.png)
+
+## 11. Calculate the average number of students enrolled in each course using aggregate functions and subqueries.
+
+## 12. Identify the student(s) who made the highest payment using a subquery.
+
+```sql
+select student_id, max(amount)
+from Payments p
+group by student_id
+having max(amount) = (select  max(amount) as maximum
+                                       from Payments);
+
+```
+
+![alt text](image-18.png)
+
+## 13. Retrieve a list of courses with the highest number of enrollments using subqueries.
+
+## 14. Calculate the total payments made to courses taught by each teacher using subqueries.
+
+**1.using sub queries**
+
+```sql
+select t.teacher_id,
+       t.first_name,
+	   t.last_name,
+( select sum(p.amount)
+  from payments p
+  where p.student_id in
+		      (select e.student_id
+			   from Enrollments e
+               where e.course_id in
+					        ( select c.course_id
+							  from Courses c
+                              where c.teacher_id = t.teacher_id
+							)
+               )
+)
+as totalamount
+ from Teachers t
+order by totalamount desc;
+```
+
+**2. Using joins**
+
+```sql
+
+select t.teacher_id, t.first_name, t.last_name, sum(p.amount) as totalamount
+from Teachers t
+join Courses c
+on c.teacher_id = t.teacher_id
+join Enrollments e
+on e.course_id = c.course_id
+join Payments p
+on p.student_id = e.student_id
+where c.course_id in (
+    select course_id
+    from Courses
+    where teacher_id = t.teacher_id
+)
+group by t.teacher_id, t.first_name, t.last_name
+order by totalamount desc;
+```
+
+![alt text](image-19.png)
+
+## 15. Identify students who are enrolled in more than one course.
+
+**1. Using sub queries**
+
+```sql
+select
+    s.student_id,
+    s.first_name,
+    s.last_name,
+    (
+        select count(e.course_id)
+        from enrollments e
+        where e.student_id = s.student_id
+    ) as totalstudents
+from students s
+where exists (
+    select *
+    from enrollments e
+    where e.student_id = s.student_id
+    having count(e.course_id) >1 );
+```
+
+**2. Using joins**
+
+```sql
+select  s.student_id,
+        s.first_name,
+		s.last_name,
+		Count(e.course_id) as totalStudents
+		from Students s
+join Enrollments e
+on e. student_id = s.student_id
+where course_id in (select course_id
+                    from Enrollments )
+group by  s.student_id,
+          s.first_name,
+		  s.last_name
+having Count(e.course_id) > 1;
+```
+
+![alt text](image-20.png)
