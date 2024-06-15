@@ -1,6 +1,6 @@
 # Assesment 1
 
-### creating the tables and inserting the records
+### Creating the tables and inserting the records
 
 ```sql
 create table Students (
@@ -80,12 +80,6 @@ select * from Courses;
 select * from Enrollments;
 select * from Payments;
 
-drop table Students;
-drop table Teachers;
-drop table Courses;
-drop table Enrollments;
-drop table Payments;
-
 ```
 
 ## 1. Write an SQL query to insert a new student named John Doe into the "Students" table.
@@ -146,14 +140,33 @@ select * from courses;
 
 ## 6. Write an SQL query to calculate the total payments made by a specific student.
 
+```sql
+select s.student_id,
+       s.first_name,
+	   s.last_name,
+	   SUM(p.amount) as total_payments
+	   from Payments p
+join Enrollments e
+   on e.student_id = p.student_id
+join Students s
+   on s.student_id = e.student_id
+where p.amount in
+  (
+  select p.amount from Payments
+  )
+group by s.student_id, s.first_name, s.last_name;
+```
+
+![alt text](image-21.png)
+
 ## 7. Retrieve a list of courses along with the count of students enrolled in each.
 
 ```sql
 select student_id, count(student_id)
-as countofcourses
+   as countofcourses
 from courses c
 join Enrollments E
-on c.course_id= E.course_id
+   on c.course_id= E.course_id
 group by student_id;
 
 ```
@@ -165,7 +178,10 @@ group by student_id;
 ```sql
 select first_name, last_name
 from Students s
-where s. student_id not in (select student_id from Enrollments)
+where s. student_id not in
+   (
+    select student_id from Enrollments
+    )
 ```
 
 ![alt text](image-15.png)
@@ -193,9 +209,20 @@ join Courses c
 on c.teacher_id = t.teacher_id;
 ```
 
-![alt text](image-17.png)
+![alt text](image-24.png)
 
 ## 11. Calculate the average number of students enrolled in each course using aggregate functions and subqueries.
+
+```sql
+select course_id, count(student_id)/(select count(distinct course_id)
+                                           from Enrollments) as avgStudents from Enrollments
+group by course_id
+
+```
+
+![alt text](image-25.png)
+
+> The average is 0 because of the limited given data.
 
 ## 12. Identify the student(s) who made the highest payment using a subquery.
 
@@ -203,14 +230,73 @@ on c.teacher_id = t.teacher_id;
 select student_id, max(amount)
 from Payments p
 group by student_id
-having max(amount) = (select  max(amount) as maximum
-                                       from Payments);
+having max(amount) =
+    (
+    select  max(amount) as maximum
+    from Payments
+    );
 
 ```
 
 ![alt text](image-18.png)
 
 ## 13. Retrieve a list of courses with the highest number of enrollments using subqueries.
+
+**Using Join**
+
+```sql
+select c.course_id,
+       c.course_name,
+	   count( enrollment_id) as counted
+	   from Courses c
+join Enrollments e
+   on c.course_id = e.course_id
+where enrollment_id in
+       (
+        select enrollment_id
+		from Enrollments
+		)
+group by c.course_id,
+         c.course_name
+         Having count( enrollment_id)= (
+		 select max(enrollmentcount)
+		 from
+         (
+		   select count( enrollment_id) as enrollmentcount
+           from Enrollments
+	       group by course_id
+		 )
+		 as maximum);
+
+```
+
+**using sub Queries**
+
+```sql
+select c.course_id,
+       c.course_name,
+	   (
+	    select count( enrollment_id)
+	    from Enrollments e
+	    where e.course_id = c.course_id
+	  ) as counted
+	   from Courses c
+	   where exists (
+	   select *
+	   from Enrollments e
+	   where e.course_id = c.course_id
+	   Having count( enrollment_id)=
+	   (
+	     select max(enrollmentcount)
+	     from (
+	     select count( enrollment_id) as enrollmentcount
+         from Enrollments
+	     group by course_id
+	) as maximum
+	));
+```
+
+![alt text](image-22.png)
 
 ## 14. Calculate the total payments made to courses taught by each teacher using subqueries.
 
@@ -244,12 +330,13 @@ order by totalamount desc;
 select t.teacher_id, t.first_name, t.last_name, sum(p.amount) as totalamount
 from Teachers t
 join Courses c
-on c.teacher_id = t.teacher_id
+   on c.teacher_id = t.teacher_id
 join Enrollments e
-on e.course_id = c.course_id
+   on e.course_id = c.course_id
 join Payments p
-on p.student_id = e.student_id
-where c.course_id in (
+   on p.student_id = e.student_id
+where c.course_id in
+ (
     select course_id
     from Courses
     where teacher_id = t.teacher_id
