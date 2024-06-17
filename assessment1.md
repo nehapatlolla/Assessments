@@ -118,11 +118,8 @@ select * from teachers;
 ## 4. Write an SQL query to delete a specific enrollment record, choosing based on the student and course.
 
 ```sql
-delete from Enrollments
-where student_id = 1
-and course_id = 102
-and enrollment_date = '2024-06-15';
-select * from Enrollments;
+delete from enrollments
+ where student_id=3 and course_id=103;
 ```
 
 ![alt text](image-12.png)
